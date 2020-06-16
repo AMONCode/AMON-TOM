@@ -1,0 +1,9 @@
+tom_env
+db.sqlite3
+*.pyc
+secret_key.txt
+amon_db_password.txt
+.ssh
+debug.log
+amonTOM/data/*
+amonTOM_test

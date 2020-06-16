@@ -1,0 +1,108 @@
+{% extends 'tom_common/base.html' %}
+{% block title %}Query Result for {{ query }}{% endblock %}
+{% block content %}
+<h2>Query Result for {{ query }}</h2>
+<form method="POST" action="{% url 'create-target-from-alert' %}">
+  {% csrf_token %}
+  <div class="">
+    <input type="hidden" name="broker" value="{{ query.broker }}"/>
+    <input type="hidden" name="query_id" value="{{ query.id }}"/>
+    <input type="submit" value="Create Targets" class="btn btn-primary"/>
+  </div>
+  <table class="table table-striped">
+  {% if broker in amon_brokers %}
+    {% if broker == 'Nu-EM' %}
+      <thead>
+        <tr><th></th><th>Time</th><th>Stream</th><th>RA [°]</th><th>Dec [°]</th><th>l [°]</th><th>b [°]</th><th>Radius 90% [°]</th><th>ΔT [s]</th><th>σ<sub>T</sub> [s]</th><th>N evts</th><th>False Alarm Rate [yr⁻¹]</th><!-- <th>View</th> --></tr>
+      </thead>
+      <tbody>
+      {% for alert in alerts %}
+        <tr>
+            <td><input type="checkbox" name="alerts" value="{{ alert.id }}"/></td>
+            <td>{{ alert.timestamp }}</td>
+            <td>{{ alert.stream }}</td>
+            <td>{{ alert.ra|floatformat:3 }}</td>
+            <td>{{ alert.dec|floatformat:3 }}</td>
+            <td>{{ alert.l|floatformat:3 }}</td>
+            <td>{{ alert.b|floatformat:3 }}</td>
+            <td>{{ alert.src_error90|floatformat:3 }}</td>
+            <td>{{ alert.delta_t|floatformat:0 }}</td>
+            <td>{{ alert.sigma_t|floatformat:0 }}</td>
+            <td>{{ alert.nevents }}</td>
+            <td>{{ alert.far|floatformat:3 }}</td>
+            <!-- <td><a href="{{ alert.url }}" target="_blank" title="View alert">View</a></td> -->
+         </tr>
+      {% endfor %}
+      </tbody>
+      {% elif broker == 'IceCube' %}
+      <thead>
+        <tr><th></th><th>Time</th><th>Stream</th><th>RA [°]</th><th>Dec [°]</th><th>l [°]</th><th>b [°]</th><th>Radius 50% [°]</th><th>Radius 90% [°]</th><th>Energy [Tev]</th><th>Charge [p.e.]</th><th>Signalness [dn]</th><th>False Alarm Rate [yr⁻¹]</th><th>View</th></tr>
+      </thead>
+      <tbody>
+      {% for alert in alerts %}
+        <tr>
+            <td><input type="checkbox" name="alerts" value="{{ alert.id }}"/></td>
+            <td>{{ alert.timestamp }}</td>
+            <td>{{ alert.stream }}</td>
+            <td>{{ alert.ra|floatformat:3 }}</td>
+            <td>{{ alert.dec|floatformat:3 }}</td>
+            <td>{{ alert.l|floatformat:3 }}</td>
+            <td>{{ alert.b|floatformat:3 }}</td>
+            <td>{{ alert.src_error|floatformat:3 }}</td>
+            <td>{{ alert.src_error90|floatformat:3 }}</td>
+            <td>{{ alert.energy|floatformat:3 }}</td>
+            <td>{{ alert.charge|floatformat:0 }}</td>
+            <td>{{ alert.signalness|floatformat:3 }}</td>
+            <td>{{ alert.far|floatformat:3 }}</td>
+            <td><a href="{{ alert.url }}" target="_blank" title="View alert">View</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      {% elif broker == 'HAWC-GRB' %}
+      <thead>
+        <tr><th></th><th>Time</th><th>RA [°]</th><th>Dec [°]</th><th>l [°]</th><th>b [°]</th><th>Radius 90% [°]</th><th>Delta T [s]</th><th>Pvalue</th><th>False Alarm Rate [yr⁻¹]</th><th>View</th></tr>
+      </thead>
+      <tbody>
+      {% for alert in alerts %}
+        <tr>
+            <td><input type="checkbox" name="alerts" value="{{ alert.id }}"/></td>
+            <td>{{ alert.timestamp }}</td>
+            <!--<td>{{ alert.name }}</td>-->
+            <td>{{ alert.ra|floatformat:3 }}</td>
+            <td>{{ alert.dec|floatformat:3 }}</td>
+            <td>{{ alert.l|floatformat:3 }}</td>
+            <td>{{ alert.b|floatformat:3 }}</td>
+            <td>{{ alert.src_error90|floatformat:3 }}</td>
+            <td>{{ alert.deltaT|floatformat:3 }}</td>
+            <td>{{ alert.pvalue|floatformat:5 }}</td>
+            <td>{{ alert.far|floatformat:3 }}</td>
+            <td><a href="{{ alert.url }}" target="_blank" title="View alert">View</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      {% endif %}
+    {% else %}
+    <thead>
+      <tr><th></th><th>Time</th><th>Name</th><th>RA</th><th>Dec</th><th>Mag</th><th>Score</th><th>View</th></tr>
+    </thead>
+    <tbody>
+      {% for alert in alerts %}
+          <tr>
+            <td><input type="checkbox" name="alerts" value="{{ alert.id }}"/></td>
+            <td>{{ alert.timestamp }}</td>
+            <td>{{ alert.name }}</td>
+            <td>{{ alert.ra|floatformat:3 }}</td>
+            <td>{{ alert.dec|floatformat:3 }}</td>
+            <td>{{ alert.mag|floatformat:3 }}</td>
+            <td>{{ alert.score|floatformat:3 }}</td>
+            <td><a href="{{ alert.url }}" target="_blank" title="View alert">View</a></td>
+          </tr>
+      {% endfor %}
+    </tbody>
+    {% endif %}
+  </table>
+  {% if max_n_evts != 0 and max_n_evts is not None %}
+  Number of events displayed is limited to {{max_n_evts}}.
+  {% endif %}
+</form>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'tom_common/base.html' %}
+{% load static targets_extras observation_extras dataproduct_extras tom_common_extras %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <h2 class="text-center">AMON Target and Observation Manager.</h2>
+    <p class="text-center"><img src="{% static 'img/header3_AMON_blue-980x221.jpg' %}" class="img-fluid mx-auto"></p>
+    <h3>How to use this website?</h3>
+    <ul>
+      <li>
+        Query <a href="{% url 'AmonBrokerQueryList' %}" title="AMON Broker query list">AMON alerts</a> filtering by time, location, energy, resolution...
+      </li>
+      <li>
+        Create targets from these alerts or a <a href="{% url 'tom_catalogs:query' %}" title="Catalog query">catalog search</a>.
+      </li>
+      <li>
+        Eventually <a href="{% url 'targets:list' %}" title="Target list">plan and request</a> observations of a target and follow the <a href="{% url 'observations:list' %}" title="Observation list">observation status</a>.
+      </li>
+      <li>
+        Gather data from other observatories too and <a href="{% url 'targets:list' %}" title="Target list">visualize them</a>.
+      </li>
+    </ul>
+    <h3>Permissions</h3>
+    <ul>
+      <li>No account is needed to see <a href="{% url 'AmonBrokerQueryList' %}">public alerts</a>.</li>
+      <li>Anyone that wants to view or create targets from public alerts can <a href="{% url 'public-user-create' %}">sign up</a>.</li>
+      <li>Each <a href="https://www.amon.psu.edu/amon-participants/">collaboration</a> member of AMON has its own account giving access to private alerts.<br>Use it if you are part of such collaboration.</li>
+    </ul>
+    <h3><a href="https://www.amon.psu.edu/">AMON</a> project</h3>
+    <ul>
+      <li><a href="https://www.amon.psu.edu/publications/">Publications</a></li>
+      <li>AMON <a href="https://www.amon.psu.edu/amon-participants/">members</a></li>
+      <li><a href="https://gcn.gsfc.nasa.gov/amon.html">GCN</a></li>
+      <li><a href="mailto:amon@psu.edu">Contact</a></li>
+    </ul>
+  </div>
+  <div class="col-md-4">
+    <!-- <div class="card">
+      <div class="card-header">
+        Latest Comments
+      </div>
+      {% recent_comments %}
+    </div>
+    <br/> -->
+    <div class="card">
+      <div class="card-header">
+        Latest Targets
+      </div>
+      {% recent_targets %}
+  </div>
+</div>
+{% endblock %}

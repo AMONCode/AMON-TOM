@@ -1,0 +1,24 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 %}
+{% block title %}Create user{% endblock %}
+{% block content %}
+<p>Anyone can create an account, it will grant you the permission to create targets from public alerts.<br>
+AMON members can use their collaboration account to access private alerts.</p>
+{% if object %}
+<form action="{% url 'user-update' object.id %}" method="POST">
+{% else %}
+<form action="{% url 'public-user-create' %}" method="POST">
+{% endif %}
+{% csrf_token %}
+{% bootstrap_form form %}
+{% buttons %}
+  <button type="submit" class="btn btn-primary">
+    {% if object %}
+    Update
+    {% else %}
+    Create User
+    {% endif %}
+  </button>
+{% endbuttons %}
+</form>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 %}
+{% block title %}Query List{% endblock %}
+{% block content %}
+<h3>Query a Broker</h3>
+<div class="row">
+  <div class="col-md-10">
+    <p>
+      AMON: 
+      {% for broker in installed_brokers %}
+      {% if broker in amon_brokers %} 
+        {% if broker not in private_brokers %}
+          <a href="{% url 'public-create' %}?broker={{ broker }}" title="{{ broker }}" class="btn btn-outline-primary">{{ broker }}</a>
+        {% else %}
+          <a href="{% url 'tom_alerts:create' %}?broker={{ broker }}" title="{{ broker }}" class="btn btn-outline-primary">{{ broker }}</a>
+        {% endif %}
+      {% endif %}
+      {% endfor %}
+    </p>
+    <p>
+      Other: 
+      {% for broker in installed_brokers %}
+      {% if broker not in amon_brokers %} 
+      <a href="{% url 'public-create' %}?broker={{ broker }}" title="{{ broker }}" class="btn btn-outline-primary">{{ broker }}</a>
+      {% endif %}
+      {% endfor %}
+    </p>
+    <table class="table table-striped">
+      <thead><tr><th>Name</th><th>Broker</th><th>Created</th><th>Last Run</th><th>Run</th><th>Delete</th></tr></thead>
+      <tbody>
+        {% for query in filter.qs %}
+        {% if query.broker in installed_brokers %}
+        <tr>
+          {% if query.broker not in private_brokers %}
+            <td><a href="{% url 'public-update' query.id %}" title="Update {{ query.name }}">{{ query.name }}</a></td>
+          {% else %}
+            <td><a href="{% url 'tom_alerts:update' query.id %}" title="Update {{ query.name }}">{{ query.name }}</a></td>
+          {% endif %}
+          <td>{{ query.broker }}</td>
+          <td>{{ query.created }}</td>
+          <td>{{ query.last_run }}</td>
+          {% if query.broker in private_brokers %}
+          <td><a href="{% url 'PrivateAmonRunQuery' query.id %}" title="Run query" class="btn btn-primary">Run</a></td>
+          {% elif query.broker in amon_brokers %}
+          <td><a href="{% url 'PublicAmonRunQuery' query.id %}" title="Run query" class="btn btn-primary">Run</a></td>
+          {% else %}
+          <td><a href="{% url 'tom_alerts:run' query.id %}" title="Run query" class="btn btn-primary">Run</a></td>
+          {% endif %} <!-- TODO MARS and other brokers are using tom_alerts:run so they cannot be run public-->
+          {% if query.broker not in private_brokers %}
+          <td><a href="{% url 'public-delete' query.id %}" title="Delete query" class="btn btn-danger">Delete</a></td>
+          {% else %}
+          <td><a href="{% url 'tom_alerts:delete' query.id %}" title="Delete query" class="btn btn-danger">Delete</a></td>
+          {% endif %}
+        </tr>
+        {% endif %}
+        {% empty %}
+        <tr>
+          <td colspan="5">
+            No saved queries yet. Try creating a query from one of the alert brokers listed above.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="col-md-2">
+    <h4>Filter Saved Queries</h4>
+    <form action="" method="get" class="form">
+      {% bootstrap_form filter.form %}
+      {% buttons %}
+        <button type="submit" class="btn btn-primary">
+          Filter
+        </button>
+        <a href="{% url 'tom_alerts:list' %}" class="btn btn-secondary" title="Reset">Reset</a>
+      {% endbuttons %}
+    </form>
+  </div>
+</div>
+{% endblock %}
