@@ -22,11 +22,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-with open('/var/www/amonTOM/amonTOM/secret_key.txt') as f:
+with open(os.path.join(BASE_DIR, 'secret_key.txt')) as f:
     SECRET_KEY = f.read().strip()
 
-with open('/var/www/amonTOM/amonTOM/amon_db_password.txt') as f:
+with open(os.path.join(BASE_DIR, 'amon_db_password.txt')) as f:
     AMON_DB_PASSWORD = f.read().strip()
+
+SSH_KEY_FILE = os.path.join(os.path.dirname(BASE_DIR), '.ssh/pair_of_keys.pem')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -193,7 +196,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/var/www/amonTOM/amonTOM/debug.log',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
             'formatter': 'simple',
         },
     },
@@ -299,7 +302,6 @@ AMON_BROKERS = [
 ]
 # Brokers that will be visible only to authenticated users
 PRIVATE_BROKERS = [
-    'Nu-EM',
 ]
 
 BROKER_CREDENTIALS = {

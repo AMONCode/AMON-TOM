@@ -21,23 +21,24 @@ import MySQLdb as db
 import pandas as pd
 import numpy as np
 from numpy import sin, cos
+import os
 
 logger = logging.getLogger(__name__)
-# print(__name__, file=open('/var/www/amonTOM/amonTOM/print.txt', 'a'))
 
 # Example of broker: https://github.com/TOMToolkit/tom_base/blob/master/tom_alerts/brokers/mars.py
 
 # ssh variables
-host = '3.13.26.235' # This is AWS dev TODO change to prod when ready
+#host = '3.13.26.235' # This is AWS dev
+host = '3.132.123.216'
 localhost = '127.0.0.1'
 ssh_username = 'ubuntu'
-ssh_private_key = '/var/www/amonTOM/.ssh/pair_of_keys.pem'
+ssh_private_key = settings.SSH_KEY_FILE
 
 # database variables
 user='amon'
 password=settings.AMON_DB_PASSWORD
-database='AMON_test'
-# database='AMON_test2'
+#database='AMON_test' # for AWS dev
+database='AMON_test2'
 
 def equatorial_to_galactic(ra, dec):
     direction = SkyCoord(ra*u.deg, dec*u.deg, frame='icrs')
@@ -668,7 +669,7 @@ class NuEMAlertBroker(GenericBroker):
         selection = "SELECT * FROM alert WHERE type='observation' AND"
         
         streams = params_sel['streams']
-        stream_cond = {'1': " AND false_pos<=4", '8': " AND false_pos<=4/(3600*24*365.25) AND time>'2019-01-01'"} # stream: threshold. TODO For ant-Fermi false_pos in db is in [s-1] Colin might change it in the future
+        stream_cond = {'1': " AND false_pos<=4", '8': " AND false_pos<=4/(3600*24*365.25) AND time>'2019-05-01'"} # stream: threshold. TODO For ant-Fermi false_pos in db is in [s-1] Colin might change it in the future
         selection += " ("
         for count, stream in enumerate(streams):
             selection += "(alertConfig_stream={stream} {stream_cond})".format(stream=stream, stream_cond=stream_cond[stream])
@@ -708,7 +709,6 @@ class NuEMAlertBroker(GenericBroker):
         
         selection += ";"
 
-        logger.info(selection)
         df = query(selection)
         df['time'] = df['time'].astype(str)
         df['sigmaT'][df['alertConfig_stream'] == 1] = ' ' # empty 
@@ -732,7 +732,7 @@ class NuEMAlertBroker(GenericBroker):
             else:
                 not_sel = l < params_sel[param_tom]
             dic_alerts = np.array(dic_alerts)[not_sel]
-
+        
         # Use last rev
         ids = [alert['id'] for alert in dic_alerts]
         ids_repeated = list(set([id for id in ids if ids.count(id) > 1]))
@@ -746,7 +746,7 @@ class NuEMAlertBroker(GenericBroker):
                 if rev < max(revs):
                     index_del += [index]
         dic_alerts = np.delete(dic_alerts, index_del)
-        
+
         return iter([alert for alert in dic_alerts])
 
     @classmethod
