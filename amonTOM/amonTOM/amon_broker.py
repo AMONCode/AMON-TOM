@@ -505,6 +505,393 @@ class ICGoldBronzeBroker(GenericBroker):
 
 
 @dataclass
+class ICCascadeAlert:
+    """
+    dataclass representing an alert in order to display it in the UI.
+    """
+
+    timestamp: datetime.datetime
+    id: int
+    name: str
+    ra: float
+    dec: float
+    l: float
+    b: float
+    # mag: float
+    # score: float
+    url: str
+    energy: float
+    #charge: float
+    signalness: float
+    far: float
+    src_error: float
+    src_error90: float
+    stream: int
+    # TODO add fits, png url etc...
+
+    def to_target(self):
+        """
+        Returns a Target instance for an object defined by an alert.
+
+        :returns: representation of object for an alert
+        :rtype: `Target`
+        """
+        return Target(
+            name=self.name,
+            type='SIDEREAL',
+            ra=self.ra,
+            dec=self.dec
+        )
+
+class ICCascadeBrokerForm(GenericQueryForm):
+    evt_num = forms.IntegerField(required=False)
+    stream_list = ((26, 'Cascade'))
+    # stream = forms.ChoiceField(choices=streams,
+    #     required=False, label='Streams'
+    # )
+    # streams = forms.MultipleChoiceField(choices=stream_list, required=True,
+    #     widget=forms.CheckboxSelectMultiple, label='Streams',
+    #     help_text="HESE and EHE ended in June 2019 when Gold and Bronze started.",
+    # )
+    time__gt = forms.CharField(required=False, label='Time Lower Bound',
+        widget=forms.TextInput(attrs={'type': 'date'}),
+    )
+    time__lt = forms.CharField(required=False, label='Time Upper Bound',
+        widget=forms.TextInput(attrs={'type': 'date'})
+    )
+    time__since = forms.IntegerField(required=False, label='Time Since',
+        help_text='Alerts younger than this number of seconds',
+    )
+    jd__gt = forms.FloatField(required=False, label='JD Lower Bound')
+    jd__lt = forms.FloatField(required=False, label='JD Upper Bound')
+    cone = forms.CharField(required=False, label='Cone Search',
+        help_text='RA,Dec,radius in degrees'
+    )
+    # objectcone = forms.CharField(required=False, label='Object Cone Search',
+    #     help_text='Object name,radius in degrees'
+    # )
+    ra__gt = forms.FloatField(required=False, label='RA [°] Lower Bound', help_text='[0,360]')
+    ra__lt = forms.FloatField(required=False, label='RA [°] Upper Bound', help_text='[0,360]')
+    dec__gt = forms.FloatField(required=False, label='Dec [°] Lower Bound', help_text='[-90,90]')
+    dec__lt = forms.FloatField(required=False, label='Dec [°] Upper Bound', help_text='[-90,90]')
+    l__gt = forms.FloatField(required=False, label='l [°] Lower Bound', help_text='[0,360]')
+    l__lt = forms.FloatField(required=False, label='l [°] Upper Bound', help_text='[0,360]')
+    b__gt = forms.FloatField(required=False, label='b [°] Lower Bound', help_text='[-90,90]')
+    b__lt = forms.FloatField(required=False, label='b [°] Upper Bound', help_text='[-90,90]')
+    err__lt = forms.FloatField(required=False, label='90% Uncertainty Upper Bound')
+    err__gt = forms.FloatField(required=False, label='90% Uncertainty Lower Bound')
+    err50__lt = forms.FloatField(required=False, label='50% Uncertainty Upper Bound')
+    err50__gt = forms.FloatField(required=False, label='50% Uncertainty Lower Bound')
+    ener__lt = forms.FloatField(required=False, label='Energy [GeV] Upper Bound')
+    ener__gt = forms.FloatField(required=False, label='Energy [GeV] Lower Bound')
+    # qtot__lt = forms.FloatField(required=False, label='Charge [pe] Upper Bound', help_text='HESE or EHE')
+    # qtot__gt = forms.FloatField(required=False, label='Charge [pe] Lower Bound', help_text='HESE or EHE')
+    sig__lt = forms.FloatField(required=False, label='Signalness [dn] Upper Bound')
+    sig__gt = forms.FloatField(required=False, label='Signalness [dn] Lower Bound')
+    far__lt = forms.FloatField(required=False, label=r'False Alarm Rate [yr⁻¹] Upper Bound')
+    far__gt = forms.FloatField(required=False, label=r'False Alarm Rate [yr⁻¹] Lower Bound')
+
+
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper.layout = Layout(
+            HTML('''
+                <p>
+                Please see the <a href="https://gcn.gsfc.nasa.gov/amon.html">GCN AMON documentation</a>
+                for a detailed description of the <a href="https://gcn.gsfc.nasa.gov/doc/">Cascade</a> alerts.
+                </p>
+            '''), # TODO update this when GCN is ready
+            self.common_layout,
+            'evt_num', 'streams',
+            Fieldset('Time based filters', 'time__since',
+                Div(
+                    Div('time__gt', 'jd__gt', css_class='col',),
+                    Div('time__lt', 'jd__lt', css_class='col',),
+                    css_class="form-row",
+                )
+            ),
+            Fieldset(
+                'Energy based filters',
+                Div(
+                    Div('ener__gt', css_class='col',),
+                    Div('ener__lt', css_class='col',),
+                    css_class="form-row",
+                ),
+                # Div(
+                #     Div('qtot__gt', css_class='col',),
+                #     Div('qtot__lt', css_class='col',),
+                #     css_class="form-row",
+                # )
+            ),
+            Fieldset(
+                'Signalness based filters',
+                Div(
+                    Div('sig__gt', 'far__gt', css_class='col',),
+                    Div('sig__lt', 'far__lt', css_class='col',),
+                    css_class="form-row",
+                )
+            ),
+            Fieldset('Location based filters', 'cone',
+                # 'objectcone',
+                Div(
+                    Div('ra__gt', 'dec__gt', 'l__gt', 'b__gt', css_class='col',),
+                    Div('ra__lt', 'dec__lt', 'l__lt', 'b__lt', css_class='col',),
+                    css_class="form-row",
+                )
+            ),
+            Fieldset(
+                'Angular uncertainty based filters',
+                Div(
+                    Div('err__gt', 'err50__gt', css_class='col',),
+                    Div('err__lt', 'err50__lt', css_class='col',),
+                    css_class="form-row",
+                )
+            ),
+        )
+
+
+class ICCascadeBroker(GenericBroker):
+    name = 'IceCube'
+    form = ICCascadeBrokerForm
+
+    @classmethod
+    def fetch_alerts(clazz, params_sel): # NB should not give access to subthreshold events. check that alert and event tables are ok
+        
+        # List of param from "event" table of DB
+        param_evttab = [['evt_num', 'id='],
+                       ['time__since', 'time>'],
+                       ['time__gt', 'time>'],
+                       ['time__lt', 'time<'],
+                       ['jd__gt', 'time>'],
+                       ['jd__lt', 'time<'],
+                       ['cone', ''],
+                       # ['objectcone', ''],
+                       ['ra__gt', 'RA>'],
+                       ['ra__lt', 'RA<'],
+                       ['dec__gt', '`Dec`>'],
+                       ['dec__lt', '`Dec`<'],
+                       ['l__gt', '>'],
+                       ['l__lt', '<'],
+                       ['b__gt', '>'],
+                       ['b__lt', '<'],
+                      ]
+
+        # List of param from "parameter" table of DB
+        param_partab = [['ener__gt', 'energy', 'gt'],
+                       ['ener__lt', 'energy', 'lt'],
+                       # ['qtot__gt', 'causalqtot', 'gt'],
+                       # ['qtot__lt', 'causalqtot', 'lt'],
+                       # ['qtot__gt', 'qtot', 'gt'],
+                       # ['qtot__lt', 'qtot', 'lt'],
+                       ['sig__gt', 'signalness', 'gt'],
+                       ['sig__lt', 'signalness', 'lt'],
+                       # ['sig__gt', 'signal_trackness', 'gt'],
+                       # ['sig__lt', 'signal_trackness', 'lt'],
+                       ['far__gt', 'far', 'gt'],
+                       ['far__lt', 'far', 'lt'],
+                       ['err__gt', 'src_error90', 'gt'],
+                       ['err__lt', 'src_error90', 'lt'],
+                       ['err50__gt', 'src_error', 'gt'],
+                       ['err50__lt', 'src_error', 'lt'],
+                      ]
+
+        # Streams
+        streams = params_sel['streams']
+        stream = str(streams[0])
+        selection = "SELECT * FROM event WHERE type='observation' AND"
+        selection += " eventStreamConfig_stream={stream}".format(stream=stream)
+        #for count, stream in enumerate(streams):
+        #    if stream == '24' or stream == '25':
+        #        selection += "(time>'2019-06-19' AND eventStreamConfig_stream={stream})".format(stream=stream)
+        #    elif stream == '10':
+        #        selection += "(time>'2016-04-26' AND eventStreamConfig_stream={stream})".format(stream=stream)
+        #    elif stream == '11':
+        #        selection += "(time>'2016-07-30' AND eventStreamConfig_stream={stream})".format(stream=stream)
+        #    else:
+        #        selection +="eventStreamConfig_stream={stream}".format(stream=stream)
+        #    if count < len(streams)-1:
+        #        selection += " OR "
+        #selection += ")"
+        # print(selection, file=open('/var/www/amonTOM/amonTOM/print.txt', 'a'))
+
+        # Other params_sel
+        for param_tom, db_condit in param_evttab:
+            if params_sel[param_tom] is None or params_sel[param_tom] is '':
+                continue
+            if param_tom == 'time__since':
+                now = datetime.datetime.now(pytz.UTC)
+                timedelta = datetime.timedelta(seconds=params_sel[param_tom])
+                time_since = now - timedelta
+                selection += " AND {db_condit}'{time_since}'".format(db_condit=db_condit, time_since=str(time_since))
+            elif param_tom in ['jd__gt', 'jd__lt']:
+                time = Time(params_sel[param_tom], format='mjd')
+                timedate = time.isot
+                selection += " AND {db_condit}'{timedate}'".format(db_condit=db_condit, timedate=timedate)
+            elif param_tom in ['b__gt', 'b__lt']:
+                # NB longitude and latitude in db are not set (always 0 and -90)
+                # ...so I need to write the conversion when querying the database (and I do the longitude selection later)
+                Dec_NGP = str(np.deg2rad(27.12825))
+                Ra_NGP = str(np.deg2rad(192.85948))
+                # Lon_NCP = str(np.deg2rad(122.93192))
+                conv = 'SIN({dec_NGP})*SIN(RADIANS(`Dec`))+COS({dec_NGP})*COS(RADIANS(`Dec`))*COS(RADIANS(`RA`)-{ra_NGP})'.format(dec_NGP=Dec_NGP, ra_NGP=Ra_NGP)
+                selection += " AND {conv}{db_condit}SIN(RADIANS('{param_tom}'))".format(conv=conv, db_condit=db_condit, param_tom=params_sel[param_tom])
+            elif param_tom == 'cone':
+                center_ra = float(params_sel[param_tom].split(',')[0])
+                center_dec = float(params_sel[param_tom].split(',')[1])
+                cone_radius = float(params_sel[param_tom].split(',')[2])
+                selection += " AND SQRT(POW(`RA`-{ra_center},2) + POW(`Dec`-{dec_center},2))<{radius}".format(ra_center=center_ra, dec_center=center_dec, radius=cone_radius)
+            elif params_sel[param_tom] is not '' and param_tom not in ['l__gt', 'l__lt']: # in general
+                selection += " AND {db_condit}'{param_tom}'".format(db_condit=db_condit, param_tom=params_sel[param_tom]) # '' are necessary for the time
+        #if '10' in streams and '11' in streams:
+        #    selection += " AND NOT (id=1282906888376 AND eventStreamConfig_stream=11)" # NB Hardcoded: There is one event which is HESE and EHE at the same time, so I select it as HESE only and modify it after
+        selection += ";"
+        
+        logger.info(selection)
+        df = query(selection)
+        df['time'] = df['time'].astype(str)
+        df['energy'] = None # empty 
+        df['signalness'] = None # empty 
+        # df['signal_trackness'] = None # empty 
+        df['far'] = None # empty 
+        df['src_error'] = None # empty 
+        df['src_error90'] = None # empty 
+        # df['causalqtot'] = None # empty 
+        # df['qtot'] = None # empty 
+        df['stream'] = "Cascade"
+        # df['stream'][df['eventStreamConfig_stream'] == 24] = "Gold"
+        # df['stream'][df['eventStreamConfig_stream'] == 25] = "Bronze"
+        # df['stream'][df['eventStreamConfig_stream'] == 10] = "HESE"
+        # df['stream'][df['eventStreamConfig_stream'] == 11] = "EHE"
+        # df['stream'][df['id']==1282906888376] = "HESE EHE"
+
+        dic_alerts = df.to_dict('records')
+
+        for param_tom in ['l__gt', 'l__lt']:
+            # NB longitude and latitude in db are not set (always 0 and -90)
+            # ...so I do the selection afterwards for longitude
+            if params_sel[param_tom] is None:
+                continue
+            ra_list = [dic_alerts[i]['RA'] for i in range(len(dic_alerts))]
+            dec_list = [dic_alerts[i]['Dec'] for i in range(len(dic_alerts))]
+            l, b = equatorial_to_galactic(ra_list, dec_list)
+            if '__gt' in param_tom:
+                not_sel = l > params_sel[param_tom]
+            else:
+                not_sel = l < params_sel[param_tom]
+            dic_alerts = np.array(dic_alerts)[not_sel]
+
+        ids = [alert['id'] for alert in dic_alerts]
+        ids_repeated = list(set([id for id in ids if ids.count(id) > 1]))
+        index_del = []
+        for id in ids_repeated:
+            indices_thisid = np.where(np.array(ids) == id)[0]
+            revs = []
+            for index in indices_thisid:
+                revs += [dic_alerts[index]['rev']]
+            for index, rev in zip(indices_thisid, revs):
+                if rev < max(revs):
+                    index_del += [index]
+        dic_alerts = np.delete(dic_alerts, index_del)
+
+
+        # Query the "parameter" table to get energy, far, error etc
+        n_match = len(dic_alerts)
+        if n_match > 0:
+            selection_param = "SELECT * FROM parameter WHERE "
+            selection_param += " ("
+            # for count, stream in enumerate(streams):
+            #     selection_param +=" event_eventStreamConfig_stream={stream}".format(stream=stream)
+            #     if count < len(streams)-1:
+            #         selection_param += " OR "
+            # selection_param += ") AND ("
+            for index, alert in enumerate(dic_alerts):
+                if index!=0:
+                    selection_param += " OR "
+                # selection_param += "event_id={id}".format(id=alert['id'])
+                selection_param += "(event_id={id} AND event_eventStreamConfig_stream={stream})".format(id=alert['id'], stream=alert['eventStreamConfig_stream'])
+
+            begin = True
+            for param_tom, param_name, db_condit in param_partab:
+                if begin:
+                    selection_param += ") AND ("
+                else:
+                    selection_param += " OR "
+                selection_param += "name='{param_name}'".format(param_name=param_name)
+                begin = False
+            selection_param += ");"
+
+            logger.info(selection_param)
+            df = query(selection_param)
+            # df['time'] = df['time'].astype(str)
+            dic_params = df.to_dict('records')
+            # logger.info(dic_params)
+            # Get event id of params not following conditions to remove them from dic_alerts
+            rej_ids = []
+            for param in dic_params:
+                if param['event_id'] in rej_ids:
+                    continue
+                for param_tom, param_name, db_condit in param_partab:
+                    if (params_sel[param_tom] is not None and params_sel[param_tom] is not '' # if there is a condition on this param
+                            and param['name'] == param_name and
+                            ((param['value'] < params_sel[param_tom] and db_condit == 'gt') # if not follow gt condition
+                            or (param['value'] > params_sel[param_tom] and db_condit == 'lt'))): # or if not follow lt condition
+                        rej_ids += [param['event_id']]
+            index_del = []
+            for index, alert in enumerate(dic_alerts):
+                if alert['id'] in rej_ids:
+                    index_del += [index]
+            dic_alerts = np.delete(dic_alerts, index_del)
+
+            # Put param values (energy, far, etc) in dic_alerts
+            ids = np.array([alert['id'] for alert in dic_alerts])
+            revs = np.array([alert['rev'] for alert in dic_alerts])
+            for param in dic_params:
+                rev_sel = (ids == param['event_id']) * (revs == param['event_rev'])
+                if not np.any(rev_sel):
+                    continue
+                index = np.where(rev_sel)[0][0]
+                if param['name'] != 'event_id':
+                    if param['name'] == 'energy':
+                        dic_alerts[index][param['name']]=param['value']/1000. # To get TeV
+                    else:
+                        dic_alerts[index][param['name']]=param['value']
+
+        return iter([alert for alert in dic_alerts])
+
+    @classmethod
+    def to_generic_alert(clazz, alert):
+        # isHESE = ("HESE" in alert['stream'])
+        # isGoldBronze = (alert['stream'] == "Gold") or (alert['stream'] == "Bronze")
+        # url = "https://gcn.gsfc.nasa.gov/notices_amon{_g_b}/{id1}_{id2}.amon".format(
+        #                 _g_b='_g_b' if isGoldBronze else '',
+        #                 id1=str(alert['id'])[0:6] if isGoldBronze else str(alert['id'])[6:], # run_num if GB evt_num else
+        #                 id2=str(alert['id'])[6:] if isGoldBronze else str(alert['id'])[0:6], # evt_num if GB run_num else
+        #                 )
+        return ICGoldBronzeAlert(
+            timestamp=alert['time'],
+            url=None,# url,
+            id=alert['id'],
+            name="IC_"+str(alert['id']),
+            ra=alert['RA'],
+            dec=alert['Dec'],
+            l=equatorial_to_galactic(alert['RA'], alert['Dec'])[0],
+            b=equatorial_to_galactic(alert['RA'], alert['Dec'])[1],
+            # mag=None,
+            # score=None,
+            energy=alert['energy'],
+            # charge=alert['causalqtot'] if isHESE else alert['qtot'],
+            signalness=alert['signalness'],
+            far=alert['far'],
+            src_error=alert['src_error'],
+            src_error90=alert['src_error90'],# if isHESE or isGoldBronze else None,
+            stream=alert['stream'],
+        )
+
+
+
+
+@dataclass
 class NuEMAlert: # TODO NuEM will be public (adapt the "view" then, link to the notice)
     """
     dataclass representing an alert in order to display it in the UI.
