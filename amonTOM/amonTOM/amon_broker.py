@@ -268,7 +268,7 @@ class ICGoldBronzeBrokerForm(GenericQueryForm):
 
 
 class ICGoldBronzeBroker(GenericBroker):
-    name = 'IceCube'
+    name = 'IceCube Track'
     form = ICGoldBronzeBrokerForm
 
     @classmethod
@@ -546,9 +546,9 @@ class ICCascadeAlert:
 class ICCascadeBrokerForm(GenericQueryForm):
     evt_num = forms.IntegerField(required=False)
     stream_list = ((26, 'Cascade'))
-    # stream = forms.ChoiceField(choices=streams,
-    #     required=False, label='Streams'
-    # )
+    stream = forms.ChoiceField(choices=streams,
+        required=False, label='Streams'
+    )
     # streams = forms.MultipleChoiceField(choices=stream_list, required=True,
     #     widget=forms.CheckboxSelectMultiple, label='Streams',
     #     help_text="HESE and EHE ended in June 2019 when Gold and Bronze started.",
@@ -601,7 +601,7 @@ class ICCascadeBrokerForm(GenericQueryForm):
                 Please see the <a href="https://gcn.gsfc.nasa.gov/amon.html">GCN AMON documentation</a>
                 for a detailed description of the <a href="https://gcn.gsfc.nasa.gov/doc/">Cascade</a> alerts.
                 </p>
-            '''), # TODO update this when GCN is ready
+            '''), # TODO update doc when GCN is ready
             self.common_layout,
             'evt_num', 'streams',
             Fieldset('Time based filters', 'time__since',
@@ -652,7 +652,7 @@ class ICCascadeBrokerForm(GenericQueryForm):
 
 
 class ICCascadeBroker(GenericBroker):
-    name = 'IceCube'
+    name = 'IceCube Cascade'
     form = ICCascadeBrokerForm
 
     @classmethod
@@ -868,7 +868,7 @@ class ICCascadeBroker(GenericBroker):
         #                 id1=str(alert['id'])[0:6] if isGoldBronze else str(alert['id'])[6:], # run_num if GB evt_num else
         #                 id2=str(alert['id'])[6:] if isGoldBronze else str(alert['id'])[0:6], # evt_num if GB run_num else
         #                 )
-        return ICGoldBronzeAlert(
+        return ICCascadeAlert(
             timestamp=alert['time'],
             url=None,# url,
             id=alert['id'],

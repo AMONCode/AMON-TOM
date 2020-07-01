@@ -34,7 +34,7 @@ SSH_KEY_FILE = os.path.join(os.path.dirname(BASE_DIR), '.ssh/pair_of_keys.pem')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['amontom.science.psu.edu', '127.0.0.1', 'amontom.vmhost.psu.edu']
+ALLOWED_HOSTS = ['amontom.science.psu.edu', '127.0.0.1', 'amonTOM.vmhost.psu.edu', 'amontom.vmhost.psu.edu']
 
 
 # Application definition
@@ -296,7 +296,8 @@ TOM_ALERT_CLASSES = [
     # 'amonTOM.my_broker.MyBroker',
 ] # NB: when add an AMON broker change the "if query.broker ==" of tom_alerts/brokerquery_list.html
 AMON_BROKERS = [
-    'IceCube',
+    'IceCube Track',
+    # 'IceCube Cascade',
     'Nu-EM',
     'HAWC-GRB',
 ]
