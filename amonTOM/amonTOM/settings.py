@@ -284,6 +284,7 @@ TOM_HARVESTER_CLASSES = [
 
 TOM_ALERT_CLASSES = [
     'amonTOM.amon_broker.ICGoldBronzeBroker',
+    'amonTOM.amon_broker.ICCascadeBroker',
     'amonTOM.amon_broker.NuEMAlertBroker',
     'amonTOM.amon_broker.HAWCGRBBroker',
     'tom_alerts.brokers.mars.MARSBroker',
