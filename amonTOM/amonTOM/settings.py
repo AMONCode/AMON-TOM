@@ -297,7 +297,7 @@ TOM_ALERT_CLASSES = [
 ] # NB: when add an AMON broker change the "if query.broker ==" of tom_alerts/brokerquery_list.html
 AMON_BROKERS = [
     'IceCube Track',
-    # 'IceCube Cascade',
+    'IceCube Cascade',
     'Nu-EM',
     'HAWC-GRB',
 ]

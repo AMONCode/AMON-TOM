@@ -546,9 +546,10 @@ class ICCascadeAlert:
 class ICCascadeBrokerForm(GenericQueryForm):
     evt_num = forms.IntegerField(required=False)
     stream_list = ((26, 'Cascade'))
-    stream = forms.ChoiceField(choices=streams,
-        required=False, label='Streams'
-    )
+    streams = stream_list[0]
+    # stream = forms.ChoiceField(choices=streams,
+    #     required=False, label='Streams'
+    # )
     # streams = forms.MultipleChoiceField(choices=stream_list, required=True,
     #     widget=forms.CheckboxSelectMultiple, label='Streams',
     #     help_text="HESE and EHE ended in June 2019 when Gold and Bronze started.",
