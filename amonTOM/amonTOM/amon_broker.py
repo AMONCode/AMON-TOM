@@ -527,6 +527,8 @@ class ICCascadeAlert:
     src_error: float
     src_error90: float
     stream: int
+    fits_url: str
+    png_url: str
     # TODO add fits, png url etc...
 
     def to_target(self):
@@ -545,8 +547,8 @@ class ICCascadeAlert:
 
 class ICCascadeBrokerForm(GenericQueryForm):
     evt_num = forms.IntegerField(required=False)
-    stream_list = ((26, 'Cascade'))
-    streams = stream_list[0]
+    #stream_list = ((26, 'Cascade'))
+    #streams = stream_list
     # stream = forms.ChoiceField(choices=streams,
     #     required=False, label='Streams'
     # )
@@ -698,11 +700,12 @@ class ICCascadeBroker(GenericBroker):
                       ]
 
         # Streams
-        streams = params_sel['streams']
-        stream = str(streams[0])
+        #streams = params_sel['streams']
+        stream = 26 #str(streams[0])
         selection = "SELECT * FROM event WHERE type='observation' AND"
         selection += " eventStreamConfig_stream={stream}".format(stream=stream)
-        #for count, stream in enumerate(streams):
+        selection += " AND signalness!=-1"
+        #for count, stream in enumerate(streams): TODO once it works well remove al useless commented parts
         #    if stream == '24' or stream == '25':
         #        selection += "(time>'2019-06-19' AND eventStreamConfig_stream={stream})".format(stream=stream)
         #    elif stream == '10':
@@ -757,6 +760,9 @@ class ICCascadeBroker(GenericBroker):
         df['far'] = None # empty 
         df['src_error'] = None # empty 
         df['src_error90'] = None # empty 
+        df['name'] = None # empty
+        df['fits_url'] = None # empty
+        df['png_url'] = None # empty
         # df['causalqtot'] = None # empty 
         # df['qtot'] = None # empty 
         df['stream'] = "Cascade"
@@ -796,9 +802,9 @@ class ICCascadeBroker(GenericBroker):
         dic_alerts = np.delete(dic_alerts, index_del)
 
 
-        # Query the "parameter" table to get energy, far, error etc
         n_match = len(dic_alerts)
         if n_match > 0:
+            # Query the "parameter" table to get energy, far, error etc
             selection_param = "SELECT * FROM parameter WHERE "
             selection_param += " ("
             # for count, stream in enumerate(streams):
@@ -820,6 +826,7 @@ class ICCascadeBroker(GenericBroker):
                     selection_param += " OR "
                 selection_param += "name='{param_name}'".format(param_name=param_name)
                 begin = False
+            selection_param += " OR name like 'IceCubeCascade-%'"
             selection_param += ");"
 
             logger.info(selection_param)
@@ -847,6 +854,7 @@ class ICCascadeBroker(GenericBroker):
             # Put param values (energy, far, etc) in dic_alerts
             ids = np.array([alert['id'] for alert in dic_alerts])
             revs = np.array([alert['rev'] for alert in dic_alerts])
+            logger.info(dic_params)
             for param in dic_params:
                 rev_sel = (ids == param['event_id']) * (revs == param['event_rev'])
                 if not np.any(rev_sel):
@@ -855,8 +863,69 @@ class ICCascadeBroker(GenericBroker):
                 if param['name'] != 'event_id':
                     if param['name'] == 'energy':
                         dic_alerts[index][param['name']]=param['value']/1000. # To get TeV
+                    elif param['name'][:15] == 'IceCubeCascade-':
+                        dic_alerts[index]['name']=param['name']
                     else:
                         dic_alerts[index][param['name']]=param['value']
+
+            # Query the "skyMapEvent" table to get fits and png skymap url
+            selection_skymap = "SELECT * FROM skyMapEvent WHERE"
+            selection_skymap += " ("
+            # for count, stream in enumerate(streams):
+            #     selection_param +=" event_eventStreamConfig_stream={stream}".format(stream=stream)
+            #     if count < len(streams)-1:
+            #         selection_param += " OR "
+            # selection_param += ") AND ("
+            for index, alert in enumerate(dic_alerts):
+                if index!=0:
+                    selection_skymap += " OR "
+                # selection_param += "event_id={id}".format(id=alert['id'])
+                selection_skymap += "(event_id={id} AND event_eventStreamConfig_stream={stream})".format(id=alert['id'], stream=alert['eventStreamConfig_stream'])
+
+            #begin = True
+            #for param_tom, param_name, db_condit in param_partab:
+            #    if begin:
+            #        selection_param += ") AND ("
+            #    else:
+            #        selection_param += " OR "
+            #    selection_param += "name='{param_name}'".format(param_name=param_name)
+            #    begin = False
+            selection_skymap += ");"
+
+            logger.info(selection_skymap)
+            df = query(selection_skymap)
+            # df['time'] = df['time'].astype(str)
+            dic_skymaps = df.to_dict('records')
+            # logger.info(dic_params)
+            # Get event id of params not following conditions to remove them from dic_alerts
+            rej_ids = []
+            for skymap in dic_skymaps:
+                if skymap['event_id'] in rej_ids:
+                    continue
+                #for param_tom, param_name, db_condit in param_partab:
+                #    if (params_sel[param_tom] is not None and params_sel[param_tom] is not '' # if there is a condition on this param
+                #            and param['name'] == param_name and
+                #            ((param['value'] < params_sel[param_tom] and db_condit == 'gt') # if not follow gt condition
+                #            or (param['value'] > params_sel[param_tom] and db_condit == 'lt'))): # or if not follow lt condition
+                #        rej_ids += [param['event_id']]
+            #index_del = []
+            #for index, alert in enumerate(dic_alerts):
+            #    if alert['id'] in rej_ids:
+            #        index_del += [index]
+            #dic_alerts = np.delete(dic_alerts, index_del)
+
+            # Put skymap urls in dic_alerts
+            ids = np.array([alert['id'] for alert in dic_alerts])
+            revs = np.array([alert['rev'] for alert in dic_alerts])
+            for skymap in dic_skymaps:
+                rev_sel = (ids == skymap['event_id']) * (revs == skymap['event_rev'])
+                if not np.any(rev_sel):
+                    continue
+                index = np.where(rev_sel)[0][0]
+                if skymap['location'][-4:] == '.png':
+                    dic_alerts[index]['png_url']=skymap['location']
+                elif skymap['location'][-5:] == '.fits':
+                    dic_alerts[index]['fits_url']=skymap['location']
 
         return iter([alert for alert in dic_alerts])
 
@@ -871,9 +940,9 @@ class ICCascadeBroker(GenericBroker):
         #                 )
         return ICCascadeAlert(
             timestamp=alert['time'],
-            url=None,# url,
+            url=None,# url, # TODO
             id=alert['id'],
-            name="IC_"+str(alert['id']),
+            name=alert['name'],
             ra=alert['RA'],
             dec=alert['Dec'],
             l=equatorial_to_galactic(alert['RA'], alert['Dec'])[0],
@@ -887,6 +956,8 @@ class ICCascadeBroker(GenericBroker):
             src_error=alert['src_error'],
             src_error90=alert['src_error90'],# if isHESE or isGoldBronze else None,
             stream=alert['stream'],
+            fits_url=alert['fits_url'],
+            png_url=alert['png_url'],
         )
 
 

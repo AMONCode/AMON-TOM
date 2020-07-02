@@ -58,6 +58,31 @@
         </tr>
       {% endfor %}
       </tbody>
+      {% elif broker == 'IceCube Cascade' %}
+      <thead>
+        <tr><th></th><th>Time</th><th>Name</th><th>RA [°]</th><th>Dec [°]</th><th>l [°]</th><th>b [°]</th><th>Radius 50% [°]</th><th>Radius 90% [°]</th><th>Energy [Tev]</th><th>Signalness [dn]</th><th>False Alarm Rate [yr⁻¹]</th><th>Skymap</th><th>FITS</th><th>View</th></tr>
+      </thead>
+      <tbody>
+      {% for alert in alerts %}
+        <tr>
+            <td><input type="checkbox" name="alerts" value="{{ alert.id }}"/></td>
+            <td>{{ alert.timestamp }}</td>
+            <td>{{ alert.name }}</td>
+            <td>{{ alert.ra|floatformat:3 }}</td>
+            <td>{{ alert.dec|floatformat:3 }}</td>
+            <td>{{ alert.l|floatformat:3 }}</td>
+            <td>{{ alert.b|floatformat:3 }}</td>
+            <td>{{ alert.src_error|floatformat:3 }}</td>
+            <td>{{ alert.src_error90|floatformat:3 }}</td>
+            <td>{{ alert.energy|floatformat:3 }}</td>
+            <td>{{ alert.signalness|floatformat:3 }}</td>
+            <td>{{ alert.far|floatformat:3 }}</td>
+            <td><a href="{{ alert.png_url }}" target="_blank" title="Skymap PNG">Skymap</a></td>
+            <td><a href="{{ alert.fits_url }}" target="_blank" title="Skymap FITS">FITS</a></td>
+            <td><a href="{{ alert.url }}" target="_blank" title="View alert">View</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
       {% elif broker == 'HAWC-GRB' %}
       <thead>
         <tr><th></th><th>Time</th><th>RA [°]</th><th>Dec [°]</th><th>l [°]</th><th>b [°]</th><th>Radius 90% [°]</th><th>Delta T [s]</th><th>Pvalue</th><th>False Alarm Rate [yr⁻¹]</th><th>View</th></tr>
