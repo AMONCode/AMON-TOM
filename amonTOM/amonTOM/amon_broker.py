@@ -529,7 +529,6 @@ class ICCascadeAlert:
     stream: int
     fits_url: str
     png_url: str
-    # TODO add fits, png url etc...
 
     def to_target(self):
         """
@@ -547,15 +546,6 @@ class ICCascadeAlert:
 
 class ICCascadeBrokerForm(GenericQueryForm):
     evt_num = forms.IntegerField(required=False)
-    #stream_list = ((26, 'Cascade'))
-    #streams = stream_list
-    # stream = forms.ChoiceField(choices=streams,
-    #     required=False, label='Streams'
-    # )
-    # streams = forms.MultipleChoiceField(choices=stream_list, required=True,
-    #     widget=forms.CheckboxSelectMultiple, label='Streams',
-    #     help_text="HESE and EHE ended in June 2019 when Gold and Bronze started.",
-    # )
     time__gt = forms.CharField(required=False, label='Time Lower Bound',
         widget=forms.TextInput(attrs={'type': 'date'}),
     )
@@ -570,9 +560,6 @@ class ICCascadeBrokerForm(GenericQueryForm):
     cone = forms.CharField(required=False, label='Cone Search',
         help_text='RA,Dec,radius in degrees'
     )
-    # objectcone = forms.CharField(required=False, label='Object Cone Search',
-    #     help_text='Object name,radius in degrees'
-    # )
     ra__gt = forms.FloatField(required=False, label='RA [°] Lower Bound', help_text='[0,360]')
     ra__lt = forms.FloatField(required=False, label='RA [°] Upper Bound', help_text='[0,360]')
     dec__gt = forms.FloatField(required=False, label='Dec [°] Lower Bound', help_text='[-90,90]')
@@ -587,8 +574,6 @@ class ICCascadeBrokerForm(GenericQueryForm):
     err50__gt = forms.FloatField(required=False, label='50% Uncertainty Lower Bound')
     ener__lt = forms.FloatField(required=False, label='Energy [GeV] Upper Bound')
     ener__gt = forms.FloatField(required=False, label='Energy [GeV] Lower Bound')
-    # qtot__lt = forms.FloatField(required=False, label='Charge [pe] Upper Bound', help_text='HESE or EHE')
-    # qtot__gt = forms.FloatField(required=False, label='Charge [pe] Lower Bound', help_text='HESE or EHE')
     sig__lt = forms.FloatField(required=False, label='Signalness [dn] Upper Bound')
     sig__gt = forms.FloatField(required=False, label='Signalness [dn] Lower Bound')
     far__lt = forms.FloatField(required=False, label=r'False Alarm Rate [yr⁻¹] Upper Bound')
@@ -621,11 +606,6 @@ class ICCascadeBrokerForm(GenericQueryForm):
                     Div('ener__lt', css_class='col',),
                     css_class="form-row",
                 ),
-                # Div(
-                #     Div('qtot__gt', css_class='col',),
-                #     Div('qtot__lt', css_class='col',),
-                #     css_class="form-row",
-                # )
             ),
             Fieldset(
                 'Signalness based filters',
@@ -669,7 +649,6 @@ class ICCascadeBroker(GenericBroker):
                        ['jd__gt', 'time>'],
                        ['jd__lt', 'time<'],
                        ['cone', ''],
-                       # ['objectcone', ''],
                        ['ra__gt', 'RA>'],
                        ['ra__lt', 'RA<'],
                        ['dec__gt', '`Dec`>'],
@@ -683,14 +662,8 @@ class ICCascadeBroker(GenericBroker):
         # List of param from "parameter" table of DB
         param_partab = [['ener__gt', 'energy', 'gt'],
                        ['ener__lt', 'energy', 'lt'],
-                       # ['qtot__gt', 'causalqtot', 'gt'],
-                       # ['qtot__lt', 'causalqtot', 'lt'],
-                       # ['qtot__gt', 'qtot', 'gt'],
-                       # ['qtot__lt', 'qtot', 'lt'],
                        ['sig__gt', 'signalness', 'gt'],
                        ['sig__lt', 'signalness', 'lt'],
-                       # ['sig__gt', 'signal_trackness', 'gt'],
-                       # ['sig__lt', 'signal_trackness', 'lt'],
                        ['far__gt', 'far', 'gt'],
                        ['far__lt', 'far', 'lt'],
                        ['err__gt', 'src_error90', 'gt'],
@@ -705,19 +678,6 @@ class ICCascadeBroker(GenericBroker):
         selection = "SELECT * FROM event WHERE type='observation' AND"
         selection += " eventStreamConfig_stream={stream}".format(stream=stream)
         selection += " AND signalness!=-1"
-        #for count, stream in enumerate(streams): TODO once it works well remove al useless commented parts
-        #    if stream == '24' or stream == '25':
-        #        selection += "(time>'2019-06-19' AND eventStreamConfig_stream={stream})".format(stream=stream)
-        #    elif stream == '10':
-        #        selection += "(time>'2016-04-26' AND eventStreamConfig_stream={stream})".format(stream=stream)
-        #    elif stream == '11':
-        #        selection += "(time>'2016-07-30' AND eventStreamConfig_stream={stream})".format(stream=stream)
-        #    else:
-        #        selection +="eventStreamConfig_stream={stream}".format(stream=stream)
-        #    if count < len(streams)-1:
-        #        selection += " OR "
-        #selection += ")"
-        # print(selection, file=open('/var/www/amonTOM/amonTOM/print.txt', 'a'))
 
         # Other params_sel
         for param_tom, db_condit in param_evttab:
@@ -747,8 +707,6 @@ class ICCascadeBroker(GenericBroker):
                 selection += " AND SQRT(POW(`RA`-{ra_center},2) + POW(`Dec`-{dec_center},2))<{radius}".format(ra_center=center_ra, dec_center=center_dec, radius=cone_radius)
             elif params_sel[param_tom] is not '' and param_tom not in ['l__gt', 'l__lt']: # in general
                 selection += " AND {db_condit}'{param_tom}'".format(db_condit=db_condit, param_tom=params_sel[param_tom]) # '' are necessary for the time
-        #if '10' in streams and '11' in streams:
-        #    selection += " AND NOT (id=1282906888376 AND eventStreamConfig_stream=11)" # NB Hardcoded: There is one event which is HESE and EHE at the same time, so I select it as HESE only and modify it after
         selection += ";"
         
         logger.info(selection)
@@ -756,21 +714,13 @@ class ICCascadeBroker(GenericBroker):
         df['time'] = df['time'].astype(str)
         df['energy'] = None # empty 
         df['signalness'] = None # empty 
-        # df['signal_trackness'] = None # empty 
         df['far'] = None # empty 
         df['src_error'] = None # empty 
         df['src_error90'] = None # empty 
         df['name'] = None # empty
         df['fits_url'] = None # empty
         df['png_url'] = None # empty
-        # df['causalqtot'] = None # empty 
-        # df['qtot'] = None # empty 
         df['stream'] = "Cascade"
-        # df['stream'][df['eventStreamConfig_stream'] == 24] = "Gold"
-        # df['stream'][df['eventStreamConfig_stream'] == 25] = "Bronze"
-        # df['stream'][df['eventStreamConfig_stream'] == 10] = "HESE"
-        # df['stream'][df['eventStreamConfig_stream'] == 11] = "EHE"
-        # df['stream'][df['id']==1282906888376] = "HESE EHE"
 
         dic_alerts = df.to_dict('records')
 
@@ -807,15 +757,9 @@ class ICCascadeBroker(GenericBroker):
             # Query the "parameter" table to get energy, far, error etc
             selection_param = "SELECT * FROM parameter WHERE "
             selection_param += " ("
-            # for count, stream in enumerate(streams):
-            #     selection_param +=" event_eventStreamConfig_stream={stream}".format(stream=stream)
-            #     if count < len(streams)-1:
-            #         selection_param += " OR "
-            # selection_param += ") AND ("
             for index, alert in enumerate(dic_alerts):
                 if index!=0:
                     selection_param += " OR "
-                # selection_param += "event_id={id}".format(id=alert['id'])
                 selection_param += "(event_id={id} AND event_eventStreamConfig_stream={stream})".format(id=alert['id'], stream=alert['eventStreamConfig_stream'])
 
             begin = True
@@ -831,9 +775,7 @@ class ICCascadeBroker(GenericBroker):
 
             logger.info(selection_param)
             df = query(selection_param)
-            # df['time'] = df['time'].astype(str)
             dic_params = df.to_dict('records')
-            # logger.info(dic_params)
             # Get event id of params not following conditions to remove them from dic_alerts
             rej_ids = []
             for param in dic_params:
@@ -871,48 +813,21 @@ class ICCascadeBroker(GenericBroker):
             # Query the "skyMapEvent" table to get fits and png skymap url
             selection_skymap = "SELECT * FROM skyMapEvent WHERE"
             selection_skymap += " ("
-            # for count, stream in enumerate(streams):
-            #     selection_param +=" event_eventStreamConfig_stream={stream}".format(stream=stream)
-            #     if count < len(streams)-1:
-            #         selection_param += " OR "
-            # selection_param += ") AND ("
             for index, alert in enumerate(dic_alerts):
                 if index!=0:
                     selection_skymap += " OR "
-                # selection_param += "event_id={id}".format(id=alert['id'])
                 selection_skymap += "(event_id={id} AND event_eventStreamConfig_stream={stream})".format(id=alert['id'], stream=alert['eventStreamConfig_stream'])
 
-            #begin = True
-            #for param_tom, param_name, db_condit in param_partab:
-            #    if begin:
-            #        selection_param += ") AND ("
-            #    else:
-            #        selection_param += " OR "
-            #    selection_param += "name='{param_name}'".format(param_name=param_name)
-            #    begin = False
             selection_skymap += ");"
 
             logger.info(selection_skymap)
             df = query(selection_skymap)
-            # df['time'] = df['time'].astype(str)
             dic_skymaps = df.to_dict('records')
-            # logger.info(dic_params)
             # Get event id of params not following conditions to remove them from dic_alerts
             rej_ids = []
             for skymap in dic_skymaps:
                 if skymap['event_id'] in rej_ids:
                     continue
-                #for param_tom, param_name, db_condit in param_partab:
-                #    if (params_sel[param_tom] is not None and params_sel[param_tom] is not '' # if there is a condition on this param
-                #            and param['name'] == param_name and
-                #            ((param['value'] < params_sel[param_tom] and db_condit == 'gt') # if not follow gt condition
-                #            or (param['value'] > params_sel[param_tom] and db_condit == 'lt'))): # or if not follow lt condition
-                #        rej_ids += [param['event_id']]
-            #index_del = []
-            #for index, alert in enumerate(dic_alerts):
-            #    if alert['id'] in rej_ids:
-            #        index_del += [index]
-            #dic_alerts = np.delete(dic_alerts, index_del)
 
             # Put skymap urls in dic_alerts
             ids = np.array([alert['id'] for alert in dic_alerts])
@@ -931,13 +846,6 @@ class ICCascadeBroker(GenericBroker):
 
     @classmethod
     def to_generic_alert(clazz, alert):
-        # isHESE = ("HESE" in alert['stream'])
-        # isGoldBronze = (alert['stream'] == "Gold") or (alert['stream'] == "Bronze")
-        # url = "https://gcn.gsfc.nasa.gov/notices_amon{_g_b}/{id1}_{id2}.amon".format(
-        #                 _g_b='_g_b' if isGoldBronze else '',
-        #                 id1=str(alert['id'])[0:6] if isGoldBronze else str(alert['id'])[6:], # run_num if GB evt_num else
-        #                 id2=str(alert['id'])[6:] if isGoldBronze else str(alert['id'])[0:6], # evt_num if GB run_num else
-        #                 )
         return ICCascadeAlert(
             timestamp=alert['time'],
             url=None,# url, # TODO
@@ -947,10 +855,7 @@ class ICCascadeBroker(GenericBroker):
             dec=alert['Dec'],
             l=equatorial_to_galactic(alert['RA'], alert['Dec'])[0],
             b=equatorial_to_galactic(alert['RA'], alert['Dec'])[1],
-            # mag=None,
-            # score=None,
             energy=alert['energy'],
-            # charge=alert['causalqtot'] if isHESE else alert['qtot'],
             signalness=alert['signalness'],
             far=alert['far'],
             src_error=alert['src_error'],
