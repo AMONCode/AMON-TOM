@@ -94,6 +94,7 @@ def J2000(time,ra,dec,degrees=True):
     return ra2000, dec2000
 
 def query(q):
+    """Connect to the AMON machine and query the mysql database"""
     with SSHTunnelForwarder(
           (host, 22),
           ssh_username=ssh_username,
@@ -160,6 +161,7 @@ class ICGoldBronzeAlert:
         )
 
 class ICGoldBronzeBrokerForm(GenericQueryForm):
+    """Set up the fields of the broker form"""
     evt_num = forms.IntegerField(required=False)
     stream_list = ((24, 'Gold'), (25, 'Bronze'), (10, 'HESE'), (11, 'EHE'))
     # stream = forms.ChoiceField(choices=streams,
@@ -210,6 +212,7 @@ class ICGoldBronzeBrokerForm(GenericQueryForm):
 
     
     def __init__(self, *args, **kwargs):
+        """Structure the form page"""
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             HTML('''
@@ -268,6 +271,7 @@ class ICGoldBronzeBrokerForm(GenericQueryForm):
 
 
 class ICGoldBronzeBroker(GenericBroker):
+    """Make the mysql selection string from the form output and query the database"""
     name = 'IceCube Track'
     form = ICGoldBronzeBrokerForm
 
@@ -545,6 +549,7 @@ class ICCascadeAlert:
         )
 
 class ICCascadeBrokerForm(GenericQueryForm):
+    """Set up the fields of the broker form"""
     evt_num = forms.IntegerField(required=False)
     time__gt = forms.CharField(required=False, label='Time Lower Bound',
         widget=forms.TextInput(attrs={'type': 'date'}),
@@ -582,6 +587,7 @@ class ICCascadeBrokerForm(GenericQueryForm):
 
     
     def __init__(self, *args, **kwargs):
+        """Structure the form page"""
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             HTML('''
@@ -635,6 +641,7 @@ class ICCascadeBrokerForm(GenericQueryForm):
 
 
 class ICCascadeBroker(GenericBroker):
+    """Make the mysql selection string from the form output and query the database"""
     name = 'IceCube Cascade'
     form = ICCascadeBrokerForm
 
@@ -906,6 +913,7 @@ class NuEMAlert: # TODO NuEM will be public (adapt the "view" then, link to the 
 
 
 class NuEMAlertBrokerForm(GenericQueryForm):
+    """Set up the fields of the broker form"""
     evt_num = forms.IntegerField(required=False)
     stream_list = ((1, 'IceCube-HAWC'), (8, 'ANTARES-Fermi'))
     # stream = forms.ChoiceField(choices=streams,
@@ -945,6 +953,7 @@ class NuEMAlertBrokerForm(GenericQueryForm):
 
     
     def __init__(self, *args, **kwargs):
+        """Structure the form page"""
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             HTML('''
@@ -999,6 +1008,7 @@ class NuEMAlertBrokerForm(GenericQueryForm):
 
 
 class NuEMAlertBroker(GenericBroker):
+    """Make the mysql selection string from the form output and query the database"""
     name = 'Nu-EM'
     form = NuEMAlertBrokerForm
 
@@ -1171,6 +1181,7 @@ class HAWCGRBAlert:
         )
 
 class HAWCGRBBrokerForm(GenericQueryForm):
+    """Set up the fields of the broker form"""
     evt_num = forms.IntegerField(required=False)
     # streams = ((8, 'HAWC GRB'))
     # stream = forms.ChoiceField(choices=streams,
@@ -1214,6 +1225,7 @@ class HAWCGRBBrokerForm(GenericQueryForm):
 
 
     def __init__(self, *args, **kwargs):
+        """Structure the form page"""
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
             HTML('''
@@ -1267,6 +1279,7 @@ class HAWCGRBBrokerForm(GenericQueryForm):
 
 
 class HAWCGRBBroker(GenericBroker):
+    """Make the mysql selection string from the form output and query the database"""
     name = 'HAWC-GRB'
     form = HAWCGRBBrokerForm
 

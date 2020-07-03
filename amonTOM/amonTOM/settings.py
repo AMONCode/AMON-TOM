@@ -282,6 +282,7 @@ TOM_HARVESTER_CLASSES = [
     # 'tom_catalogs.harvesters.tns.TNSHarvester',
 ]
 
+# NB add here every new broker
 TOM_ALERT_CLASSES = [
     'amonTOM.amon_broker.ICGoldBronzeBroker',
     'amonTOM.amon_broker.ICCascadeBroker',
@@ -295,7 +296,9 @@ TOM_ALERT_CLASSES = [
     # 'tom_alerts.brokers.antares.ANTARESBroker', # Make antares broker work: https://github.com/TOMToolkit/tom_antares
     # 'tom_alerts.brokers.tns.TNSBroker',
     # 'amonTOM.my_broker.MyBroker',
-] # NB: when add an AMON broker change the "if query.broker ==" of tom_alerts/brokerquery_list.html
+]
+
+# Will display as an AMON broker in Alerts page
 AMON_BROKERS = [
     'IceCube Track',
     'IceCube Cascade',
