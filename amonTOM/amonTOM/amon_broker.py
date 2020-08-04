@@ -592,10 +592,10 @@ class ICCascadeBrokerForm(GenericQueryForm):
         self.helper.layout = Layout(
             HTML('''
                 <p>
-                Please see the <a href="https://gcn.gsfc.nasa.gov/amon.html">GCN AMON documentation</a>
-                for a detailed description of the <a href="https://gcn.gsfc.nasa.gov/doc/">Cascade</a> alerts.
+                Please see the <a href="https://gcn.gsfc.nasa.gov/doc/High_Energy_Neutrino_Cascade_Alerts.pdf">Cascade alerts documentation</a>
+                for a detailed description of <a href="https://gcn.gsfc.nasa.gov/amon.html">the stream</a>.
                 </p>
-            '''), # TODO update doc when GCN is ready
+            '''),
             self.common_layout,
             'evt_num', 'streams',
             Fieldset('Time based filters', 'time__since',
@@ -684,7 +684,7 @@ class ICCascadeBroker(GenericBroker):
         stream = 26 #str(streams[0])
         selection = "SELECT * FROM event WHERE type='observation' AND"
         selection += " eventStreamConfig_stream={stream}".format(stream=stream)
-        selection += " AND signalness!=-1"
+        #selection += " AND signalness!=-1"
 
         # Other params_sel
         for param_tom, db_condit in param_evttab:
@@ -778,6 +778,7 @@ class ICCascadeBroker(GenericBroker):
                 selection_param += "name='{param_name}'".format(param_name=param_name)
                 begin = False
             selection_param += " OR name like 'IceCubeCascade-%'"
+
             selection_param += ");"
 
             logger.info(selection_param)
@@ -788,12 +789,15 @@ class ICCascadeBroker(GenericBroker):
             for param in dic_params:
                 if param['event_id'] in rej_ids:
                     continue
+                if param['name'] == 'signalness' and param['value'] < 0: # rej events with sig = -1 ie subthreshold events
+                    rej_ids += [param['event_id']]
                 for param_tom, param_name, db_condit in param_partab:
                     if (params_sel[param_tom] is not None and params_sel[param_tom] is not '' # if there is a condition on this param
                             and param['name'] == param_name and
                             ((param['value'] < params_sel[param_tom] and db_condit == 'gt') # if not follow gt condition
                             or (param['value'] > params_sel[param_tom] and db_condit == 'lt'))): # or if not follow lt condition
                         rej_ids += [param['event_id']]
+                        
             index_del = []
             for index, alert in enumerate(dic_alerts):
                 if alert['id'] in rej_ids:
@@ -827,6 +831,9 @@ class ICCascadeBroker(GenericBroker):
 
             selection_skymap += ");"
 
+            if len(dic_alerts) == 0: # when there is no events selected
+                selection_skymap = "SELECT * FROM skyMapEvent limit 0"
+
             logger.info(selection_skymap)
             df = query(selection_skymap)
             dic_skymaps = df.to_dict('records')
@@ -855,7 +862,8 @@ class ICCascadeBroker(GenericBroker):
     def to_generic_alert(clazz, alert):
         return ICCascadeAlert(
             timestamp=alert['time'],
-            url=None,# url, # TODO
+            url="https://gcn.gsfc.nasa.gov/notices_amon_icecube_cascade/{run_num}_{evt_num}.amon".format(run_num=str(alert['id'])[0:6], evt_num=str(int(str(alert['id'])[6:]))),
+
             id=alert['id'],
             name=alert['name'],
             ra=alert['RA'],
@@ -866,7 +874,7 @@ class ICCascadeBroker(GenericBroker):
             signalness=alert['signalness'],
             far=alert['far'],
             src_error=alert['src_error'],
-            src_error90=alert['src_error90'],# if isHESE or isGoldBronze else None,
+            src_error90=alert['src_error90'],
             stream=alert['stream'],
             fits_url=alert['fits_url'],
             png_url=alert['png_url'],
@@ -876,7 +884,7 @@ class ICCascadeBroker(GenericBroker):
 
 
 @dataclass
-class NuEMAlert: # TODO NuEM will be public (adapt the "view" then, link to the notice)
+class NuEMAlert:
     """
     dataclass representing an alert in order to display it in the UI.
     """
@@ -958,11 +966,10 @@ class NuEMAlertBrokerForm(GenericQueryForm):
         self.helper.layout = Layout(
             HTML('''
                 <p>
-                Please see the <a href="https://arxiv.org/pdf/1904.06420.pdf">ANTARES-Fermi</a> paper
-                for a detailed description of the ANTARES-Fermi alerts.
+                Please see the <a href="https://gcn.gsfc.nasa.gov/doc/gamma_nu.pdf">gamma-neutrino coincidence alerts documentation</a>
+                for a detailed description of <a href="https://gcn.gsfc.nasa.gov/amon.html">the stream</a>.
                 </p>
-            '''), # TODO Add also the link to HAWC IC paper when it will be ready
-            # TODO and update the link to ant-fermi for definitive version (not arxiv)
+            '''),
             self.common_layout,
             'evt_num', 'streams',
             Fieldset('Time based filters', 'time__since',
@@ -1043,7 +1050,7 @@ class NuEMAlertBroker(GenericBroker):
         selection = "SELECT * FROM alert WHERE type='observation' AND"
         
         streams = params_sel['streams']
-        stream_cond = {'1': " AND false_pos<=4", '8': " AND false_pos<=4/(3600*24*365.25) AND time>'2019-05-01'"} # stream: threshold. TODO For ant-Fermi false_pos in db is in [s-1] Colin might change it in the future
+        stream_cond = {'1': " AND false_pos<=4", '8': " AND ((time>'2019-05-01' AND time<'2020-07-07' AND false_pos<=4/(3600*24*365.25)) OR (false_pos<=4 AND time>'2020-07-07'))"} # stream: threshold. Before july 2020 ant-fermi false_pos was in s-1, now in yr-1
         selection += " ("
         for count, stream in enumerate(streams):
             selection += "(alertConfig_stream={stream} {stream_cond})".format(stream=stream, stream_cond=stream_cond[stream])
@@ -1084,12 +1091,20 @@ class NuEMAlertBroker(GenericBroker):
         selection += ";"
 
         df = query(selection)
-        df['time'] = df['time'].astype(str)
-        df['sigmaT'][df['alertConfig_stream'] == 1] = ' ' # empty 
-        df['false_pos'][df['alertConfig_stream'] == 8] = df['false_pos'][df['alertConfig_stream'] == 8]*3600.*24.*365.25 # TODO this will change when Colin moves to AWS
+        #df['time'] = df['time'].astype(str)
+        df['sigmaT'][df['alertConfig_stream'] == 1] = ' ' # empty
+        select_false_pos_sec = (df['alertConfig_stream'] == 8) * (df['time']<datetime.datetime(2020, 7, 7))
+        df['false_pos'][select_false_pos_sec] = df['false_pos'][select_false_pos_sec]*3600.*24.*365.25
         df['sigmaR'][df['alertConfig_stream'] == 8] = df['sigmaR'][df['alertConfig_stream'] == 8]*2.146 # NB Colin may want to use something more conservative (see slack conv we had on 25 Mar 2020)
+
+        alert_config = query("SELECT * FROM alertConfig WHERE (stream=1 OR stream=8)") # Used to know when run number change (which correspond to a change in the analysis)
+        df['run'] = np.zeros(len(df['sigmaT']))
+        for index in range(len(alert_config['stream'])):
+            df['run'][np.array(df['alertConfig_stream']==alert_config['stream'][index]) * np.array(df['time'].to_numpy()>alert_config['validStart'][index].to_numpy())] = alert_config['rev'][index]
+
         df['alertConfig_stream'][df['alertConfig_stream'] == 1] = "IC-HAWC"
         df['alertConfig_stream'][df['alertConfig_stream'] == 8] = "ANT-Fermi"
+        df['time'] = df['time'].astype(str)
 
         dic_alerts = df.to_dict('records')
 
@@ -1125,9 +1140,19 @@ class NuEMAlertBroker(GenericBroker):
 
     @classmethod
     def to_generic_alert(clazz, alert):
+        url = "https://gcn.gsfc.nasa.gov/notices_amon_nu_em/{evt}_{run}.amon".format(
+                evt=str(alert['id']), run=str(int(alert['run']))) # NB run number is 0 until we change something to the analysis. If that is the case I should change it here.
+        circ_first_alerts = { # there was circulars before notices were ready
+                37610: 'https://gcn.gsfc.nasa.gov/gcn3/26963.gcn3',
+                1436255238: 'https://gcn.gsfc.nasa.gov/gcn3/26005.gcn3',
+                1440223121: 'https://gcn.gsfc.nasa.gov/gcn3/26674.gcn3',
+                1441204786: 'https://gcn.gsfc.nasa.gov/gcn3/26915.gcn3',
+                }
+        if alert['id'] in circ_first_alerts.keys():
+            url = circ_first_alerts[alert['id']]
         return NuEMAlert(
             timestamp=alert['time'],
-            url=None, # TODO Get URL GCN when it will be public
+            url=url,
             id=alert['id'],
             name="NuEM_"+str(alert['id']),
             ra=alert['RA'],
