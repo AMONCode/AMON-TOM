@@ -144,7 +144,7 @@ class ICGoldBronzeAlert:
     src_error: float
     src_error90: float
     stream: int
-
+    rev: int
 
     def to_target(self):
         """
@@ -505,6 +505,7 @@ class ICGoldBronzeBroker(GenericBroker):
             src_error=alert['src_error'],
             src_error90=alert['src_error90'] if isHESE or isGoldBronze else None,
             stream=alert['stream'],
+            rev=alert['rev'],
         )
 
 
@@ -533,6 +534,7 @@ class ICCascadeAlert:
     stream: int
     fits_url: str
     png_url: str
+    rev: int
 
     def to_target(self):
         """
@@ -876,6 +878,7 @@ class ICCascadeBroker(GenericBroker):
             src_error=alert['src_error'],
             src_error90=alert['src_error90'],
             stream=alert['stream'],
+            rev=alert['rev'],
             fits_url=alert['fits_url'],
             png_url=alert['png_url'],
         )
@@ -903,7 +906,7 @@ class NuEMAlert:
     delta_t: float
     sigma_t: float
     stream: str
-
+    rev: int
 
     def to_target(self):
         """
@@ -1165,6 +1168,7 @@ class NuEMAlertBroker(GenericBroker):
             delta_t=alert['deltaT'],
             sigma_t=alert['sigmaT'],
             stream=alert['alertConfig_stream'],
+            rev=alert['rev'],
         )
 
 
@@ -1189,7 +1193,7 @@ class HAWCGRBAlert:
     far: float
     src_error90: float
     stream: int
-
+    rev: int
 
     def to_target(self):
         """
@@ -1426,4 +1430,5 @@ class HAWCGRBBroker(GenericBroker):
             far=alert['false_pos'],
             src_error90=alert['sigmaR'],
             stream=alert['eventStreamConfig_stream'],
+            rev=alert['rev'],
         )

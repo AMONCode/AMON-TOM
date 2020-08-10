@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 from django.views.generic import TemplateView, FormView, DeleteView
 from django_filters.views import FilterView
 from tom_alerts.views import RunQueryView, BrokerQueryListView, BrokerQueryFilter
@@ -115,6 +116,17 @@ class PublicAmonRunQueryView(TemplateView):
                 context['max_n_evts'] = max_n_evts
         except StopIteration:
             pass
+        # Reorder
+        ordering = self.request.GET.get('ordering', 'defaultOrderField')
+        ordering_list = []
+        if ordering != 'defaultOrderField':
+            for alert in context['alerts']:
+                if not hasattr(alert, ordering) or type(eval('alert.'+ordering)) is type(None):
+                    ordering_list += [1e10]
+                else:
+                    ordering_list += [eval('alert.'+ordering)]
+            arg_sort = np.argsort(ordering_list)
+            context['alerts'] = [context['alerts'][arg] for arg in arg_sort]
         return context
 
 class PrivateAmonRunQueryView(LoginRequiredMixin, TemplateView):

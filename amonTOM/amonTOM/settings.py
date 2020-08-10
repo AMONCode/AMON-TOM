@@ -32,7 +32,7 @@ SSH_KEY_FILE = os.path.join(os.path.dirname(BASE_DIR), '.ssh/pair_of_keys.pem')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['amontom.science.psu.edu', '127.0.0.1', 'amonTOM.vmhost.psu.edu', 'amontom.vmhost.psu.edu']
 
